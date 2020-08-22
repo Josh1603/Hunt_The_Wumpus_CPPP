@@ -25,8 +25,6 @@
  // I haven't set limits on things like room amount, hazard amount etc. or defined any sort of acceptable ratio.
  // I only allowed the player to shoot into one cave at a time. I prefer it that way, otherwise it's too easy to kill the Wumpus!
 
- //TODO: Divide into Header and CPP files
-
 //References for Cave.
 struct Player;
 struct Hazard;

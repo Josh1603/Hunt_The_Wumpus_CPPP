@@ -43,7 +43,7 @@ void Player::move(Cave* i) {
 void Player::shoot(Cave* i, int direction) {
 
 	Cave* line_of_fire = i;
-	int range = bow_and_arrow.get_range();
+	int range = get_bow_and_arrow().get_range();
 
 	while (range) {
 		if (line_of_fire->hazard && line_of_fire->hazard->get_name() == Hazard_Name::Wumpus) {
@@ -53,7 +53,7 @@ void Player::shoot(Cave* i, int direction) {
 		--range;
 	}
 
-	bow_and_arrow.shoot();
+	get_bow_and_arrow().shoot();
 }
 
 void Wumpus::action(Player* player) {
@@ -75,6 +75,8 @@ Level::Level(int cave_count = 20, int cave_connections = 3, int wumpus_count = 1
 	p_bottomless_pit_count{ bottomless_pit_count },
 	p_giant_bat_count{ giant_bat_count }
 {
+	player = new Player();
+
 	generate_caves();
 	generate_hazards();
 	populate_caves();
@@ -113,7 +115,7 @@ void Level::generate_hazards() {
 }
 
 void Level::populate_caves() {
-	caves[0]->player = &player;
+	caves[0]->player = player;
 
 	vector<int> used_numbers;
 	used_numbers.push_back(0);
@@ -146,7 +148,7 @@ void Level::move_the_wumpus() {
 			new_wumpus_caves.push_back(cave->connecting_caves[new_cave]);
 
 			if (cave->connecting_caves[new_cave]->get_number() == p_current_cave->get_number()) {
-				player.set_eaten(true);
+				player->set_eaten(true);
 			}
 		}
 		else {
@@ -161,6 +163,8 @@ void Level::move_the_wumpus() {
 }
 
 Game::Game() {
+	level = new Level();
+
 	start_message = "Hunt the Wumpus!\n\nBrave adventurer, alas the time has come for you to hunt the Wumpus! Enter the labyrinth. Navigate the tunnels. Defeat him at your peril! \n\nMove: mX\nShoot: sX\n\n";
 	winner_message = "\nA wail and a thud reverberate through the knotted caves.\n\nCongratualations!!! You hath slain the Wumpus!\n\n";
 	missed_message = "\nYour arrow whistles through the air and then silence. The hunt continues.\n\n";
@@ -178,11 +182,11 @@ void Game::run_game() {
 
 		//print_wumpus_location(); 
 
-		Vector<Cave*> connecting_caves = level.get_current_cave()->connecting_caves;
+		Vector<Cave*> connecting_caves = level->get_current_cave()->connecting_caves;
 
-		cout << "Current cave is " << level.get_current_cave()->get_number() << ". Connecting caves are ";
+		cout << "Current cave is " << level->get_current_cave()->get_number() << ". Connecting caves are ";
 		print_connecting_caves(connecting_caves);
-		cout << "You have " << level.get_player().get_bow_and_arrow().get_ammo() << " arrows.\n";
+		cout << "You have " << level->get_player().get_bow_and_arrow().get_ammo() << " arrows.\n";
 
 		for (Cave* cave : connecting_caves) {
 			if (cave->hazard) {
@@ -197,72 +201,72 @@ void Game::run_game() {
 		cin >> command >> cave;
 
 		if (command == 'm' || command == 'M') {
-			if (connects(level.get_caves()[cave], connecting_caves)) {
-				level.get_player().move(level.get_caves()[cave]);
+			if (connects(level->get_caves()[cave], connecting_caves)) {
+				level->get_player().move(level->get_caves()[cave]);
 			}
 			else {
 				cout << wrong_cave;
 			}
-			if (level.get_player().is_eaten()) {
+			if (level->get_player().is_eaten()) {
 				cout << eaten_message;
 				break;
 			}
-			if (level.get_player().is_falling()) {
+			if (level->get_player().is_falling()) {
 				cout << falling_message;
 				break;
 			}
-			if (level.get_player().is_flying()) {
+			if (level->get_player().is_flying()) {
 				cout << flying_message;
 
-				int new_cave = randint(level.get_cave_count() - 1);
-				while (new_cave == cave || (level.get_caves()[new_cave]->hazard && level.get_caves()[new_cave]->hazard->name == Hazard_Name::Giant_Bat)) {
-					new_cave = randint(level.get_cave_count() - 1);
+				int new_cave = randint(level->get_cave_count() - 1);
+				while (new_cave == cave || (level->get_caves()[new_cave]->hazard && level->get_caves()[new_cave]->hazard->name == Hazard_Name::Giant_Bat)) {
+					new_cave = randint(level->get_cave_count() - 1);
 				}
 
-				if (level.get_caves()[new_cave]->hazard && level.get_caves()[new_cave]->hazard->name == Hazard_Name::Wumpus) {
+				if (level->get_caves()[new_cave]->hazard && level->get_caves()[new_cave]->hazard->name == Hazard_Name::Wumpus) {
 					cout << eaten_message;
 					break;
 				}
 
-				if (level.get_caves()[new_cave]->hazard && level.get_caves()[new_cave]->hazard->name == Hazard_Name::Bottomless_Pit) {
+				if (level->get_caves()[new_cave]->hazard && level->get_caves()[new_cave]->hazard->name == Hazard_Name::Bottomless_Pit) {
 					cout << falling_message;
 					break;
 				}
 
 				cout << "\nYou land in cave " << new_cave << ".\n\n";
-				level.get_current_cave()->player = nullptr;// Not a wumpus, bat or pit so must be a regular room.
-				level.get_caves()[new_cave]->player = &level.get_player();
-				level.set_current_cave(level.get_caves()[new_cave]);
+				level->get_current_cave()->player = nullptr;// Not a wumpus, bat or pit so must be a regular room.
+				level->get_caves()[new_cave]->player = &level->get_player();
+				level->set_current_cave(level->get_caves()[new_cave]);
 
-				level.get_player().set_flying(false);
+				level->get_player().set_flying(false);
 			}
 
-			if (level.get_player().is_moving()) {
+			if (level->get_player().is_moving()) {
 				cout << "\nYou follow the tunnel to cave " << cave << ".\n\n";
-				level.get_current_cave()->player = nullptr;
-				level.get_caves()[cave]->player = &level.get_player();
-				level.set_current_cave(level.get_caves()[cave]);
-				level.get_player().set_moving(false);
+				level->get_current_cave()->player = nullptr;
+				level->get_caves()[cave]->player = &level->get_player();
+				level->set_current_cave(level->get_caves()[cave]);
+				level->get_player().set_moving(false);
 			}
 
 		}
 
-		if ((command == 's' || command == 'S') && level.get_player().get_bow_and_arrow().get_ammo() > 0) {
-			if (connects(level.get_caves()[cave], connecting_caves)) {
+		if ((command == 's' || command == 'S') && level->get_player().get_bow_and_arrow().get_ammo() > 0) {
+			if (connects(level->get_caves()[cave], connecting_caves)) {
 				int direction = 0;
 				while (connecting_caves[direction]->get_number() != cave) {
 					++direction;
 				}
-				level.get_player().shoot(level.get_caves()[cave], direction);
-				if (level.get_player().is_wumpus_killer()) {
+				level->get_player().shoot(level->get_caves()[cave], direction);
+				if (level->get_player().is_wumpus_killer()) {
 					cout << winner_message;
 					break;
 				}
 				else {
 					cout << missed_message;
-					level.move_the_wumpus();
+					level->move_the_wumpus();
 
-					if (level.get_player().is_eaten()) {
+					if (level->get_player().is_eaten()) {
 						cout << eaten_message;
 						break;
 					}
@@ -280,7 +284,7 @@ void Game::run_game() {
 void Game::print_state() {
 	cout << "Level caves, connected cave and hazards\n\n";
 
-	for (Cave* cave : level.get_caves()) {
+	for (Cave* cave : level->get_caves()) {
 		cout << "Cave " << cave->get_number() << ":\n" << "This cave connects to cave " << cave->connecting_caves[0]->get_number() << ", cave " << cave->connecting_caves[1]->get_number() << " and cave " << cave->connecting_caves[2]->get_number() << ".\n";
 		if (cave->hazard) {
 			switch (cave->hazard->get_name()) {
@@ -302,9 +306,10 @@ void Game::print_state() {
 //}
 
 void play_game() {
-	Game game = Game();
-	//game.print_state();
-	game.run_game();
+	Game* game = new Game();
+	//game->print_state();
+	game->run_game();
+	delete game;
 }
 
 int main() {

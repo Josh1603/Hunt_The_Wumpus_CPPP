@@ -30,7 +30,10 @@ struct Player;
 struct Hazard;
 
 struct Cave {
+	Cave() {};
 	Vector<Cave*> connecting_caves;
+	Cave(const Cave&) = delete;
+	Cave& operator=(const Cave&) = delete;
 	Hazard* hazard = nullptr;
 	Player* player = nullptr;
 	void set_number(int number) { p_number = number; };
@@ -40,6 +43,9 @@ private:
 };
 
 struct Bow_and_arrow {
+	Bow_and_arrow() {};
+	Bow_and_arrow(const Bow_and_arrow&) = delete;
+	Bow_and_arrow& operator=(const Bow_and_arrow&) = delete;
 	void shoot() { --ammo; };
 	int get_ammo() { return ammo; }
 	int get_range() { return range; };
@@ -49,6 +55,11 @@ private:
 };
 
 struct Player {
+	Player() { bow_and_arrow = new Bow_and_arrow(); }
+	~Player() { delete bow_and_arrow; }
+
+	Player(const Player&) = delete;
+	Player& operator=(const Player&) = delete;
 
 	bool is_eaten() { return p_eaten; }
 	bool is_falling() { return p_falling; }
@@ -62,13 +73,13 @@ struct Player {
 	void set_moving(bool moving) { p_moving = moving; }
 	void set_wumpus_killer(bool killer) { p_wumpus_killer = killer; }
 
-	Bow_and_arrow get_bow_and_arrow() { return bow_and_arrow; }
+	Bow_and_arrow& get_bow_and_arrow() { return *bow_and_arrow; }
 
 	void move(Cave* i); // Move Player to an adjoining cave
 	void shoot(Cave* i, int direction); // Shoot into a cave
 
 private:
-	Bow_and_arrow bow_and_arrow;
+	Bow_and_arrow* bow_and_arrow;
 	bool p_eaten = false;
 	bool p_falling = false;
 	bool p_flying = false;
@@ -117,6 +128,10 @@ private:
 
 struct Level {
 	Level(int cave_count, int cave_connections, int wumpus_count, int bottomless_pit_count, int giant_bat_count);
+	~Level() { delete player; }
+	Level(const Level&) = delete;
+	Level& operator=(const Level&) = delete;
+
 	void generate_caves();
 	void generate_hazards();
 	void populate_caves();
@@ -127,7 +142,7 @@ struct Level {
 	void set_current_cave(Cave* current_cave) { p_current_cave = current_cave; }
 	Vector<Cave*>& get_caves() { return caves; }
 	Vector<Cave*>& get_wumpus_caves() { return wumpus_caves; }
-	Player& get_player() { return player; } //Must pass by reference as state can be modified.
+	Player& get_player() { return *player; } //Must pass by reference as state can be modified.
 	Vector<Hazard*>& get_hazards() { return hazards; }
 
 private:
@@ -139,25 +154,25 @@ private:
 	Cave* p_current_cave;
 	Vector<Cave*> caves;
 	Vector<Cave*> wumpus_caves;
-	Player player;
+	Player* player;
 	Vector<Hazard*> hazards;
 };
 
 struct Game {
 	Game();
+	~Game() {
+		for (Cave* cave : level->get_caves()) { delete cave; }
+		for (Hazard* hazard : level->get_hazards()) { delete hazard; }
+		delete level;
+	};
+	Game(const Game&) = delete;
+	Game& operator=(const Game&) = delete;
+
 	void run_game();
 	void print_state();
-	void print_wumpus_location();
-	~Game() {
-		for (Cave* cave : level.get_caves()) {
-			delete cave;
-		}
+	//void print_wumpus_location();
 
-		for (Hazard* hazard : level.get_hazards()) {
-			delete hazard;
-		}
-	};
-	Level level;
+	Level* level;
 	string start_message;
 	string winner_message;
 	string missed_message;

@@ -297,9 +297,9 @@ void Game::print_state() {
 	}
 }
 
-void Game::print_wumpus_location() {
-	cout << "Wumpus location: " << level.get_wumpus_caves()[0]->get_number() << "\n";
-}
+//void Game::print_wumpus_location() { //Used to debug
+//	cout << "Wumpus location: " << level.get_wumpus_caves()[0]->get_number() << "\n";
+//}
 
 void play_game() {
 	Game game = Game();
